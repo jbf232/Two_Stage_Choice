@@ -62,12 +62,12 @@ def NonParametricLikelihood(lam, potentialArrivalList,T_start,T_end):
 #Arrival Probs sum to 1 for nonparam model
 def constrArrivalProbs(x):
 
-	return 1-sum(x[:10+1])
+	return 1-sum(x[:5+1])
 
 #Tranitions sum to 1
 def constrTransitionProbs(x):
 
-	return 1-sum(x[10+1:])
+	return 1-sum(x[5+1:])
 
 
 def TwoStageLikelihood(x, numProds, offerList, purchaseList, T_start,T_end):
