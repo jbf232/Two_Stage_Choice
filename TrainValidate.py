@@ -3,9 +3,9 @@ import matplotlib.pyplot as plt
 
 numProds=5
 lengthPrefLists=2
-T=200
-T_trainList=[20,30,40,50,60,70,80,90,100]
-numTrials=100
+T=250
+T_trainList=[20,30,40,50,60,70,80,90,100, 110,120,130,140,150]
+numTrials=50
 
 nonParamTestList=[]
 twoStageTestList=[]
