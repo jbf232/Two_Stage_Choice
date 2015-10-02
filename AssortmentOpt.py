@@ -1,5 +1,5 @@
 from gurobipy import *
-from GenerateNonparametric import *
+from GenerateNonparametric import FindPurchaseNonparametric
 import numpy as np
 
 def NonParamIP(prefLists,lam, numProds, revList):
@@ -102,7 +102,7 @@ def convertNonParam(prefLists, twoStageArrival, twoStageTransition):
 			second=pref[1]
 			lam+=[twoStageArrival[first]*twoStageTransition[second]]
 		else:
-			lam+=[twoStageArrival[first]*twoStageTransition[0]]
+			lam+=[twoStageArrival[first]*(twoStageTransition[0]+ twoStageTransition[first])]
 
 	return lam
 

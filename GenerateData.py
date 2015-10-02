@@ -1,12 +1,12 @@
-from GenerateNonparametric import *
+from GenerateNonparametric import FindPurchaseNonparametric
 import numpy as np
 import random
 
 
 def GenerateData(prefLists, numProds,T,trial):
-	seed=trial+100
-	random.seed(seed)
-	np.random.seed(seed)
+	# seed=trial+100
+	# random.seed(seed)
+	# np.random.seed(seed)
 
 
 	#Generate the Sales Data

@@ -1,6 +1,6 @@
-from GenerateData import *
-from GenerateNonparametric import *
-from scipy.optimize import fmin_cobyla
+# from GenerateData import *
+from GenerateNonparametric import FindPurchaseNonparametric, GenerateTypes
+# from scipy.optimize import fmin_cobyla
 import math
 
 #Get the set of customer classes that could have potentially arrived

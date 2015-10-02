@@ -2,12 +2,17 @@ from LikelihoodFunctions import *
 import matplotlib.pyplot as plt
 import numpy as np
 from AssortmentOpt import *
+from TwoStageModel import CalcPurchaseProbsTwoStage, CalcPurchaseProbsNonParam
+from GenerateNonparametric import *
+from scipy.optimize import fmin_cobyla
+from GenerateData import *
 
 numProds=5
 lengthPrefLists=2
-T=250
-T_trainList=[30,40,50,60,90,120]
+T=500
+T_trainList=[30,60, 60, 120, 250]
 numTrials=50
+numRevTrials=50
 numGridPoints=200
 
 nonParamTestList=[]
@@ -15,6 +20,8 @@ twoStageTestList=[]
 
 nonParamRevList=[]
 twoStageRevList=[]
+optRevList=[]
+
 
 for T_train in T_trainList:
 
@@ -23,14 +30,17 @@ for T_train in T_trainList:
 
 	nonParamRev=0.0
 	twoStageRev=0.0
+	optRev=0.0
 
-	np.random.seed(912)
+	#np.random.seed(1)
 	for trial in range(numTrials):
 		prefLists=GenerateTypes(numProds, lengthPrefLists)
 		offerMatrix, purchaseMatrix = GenerateData(prefLists, numProds,T,trial)
 		potentialArrivalList=GetPotentialArrivalList(T, offerMatrix, purchaseMatrix, prefLists, numProds)
 		offerList, purchaseList = GetListSalesData(offerMatrix,purchaseMatrix,T, numProds)
-		revList=[0]+[np.random.uniform(0,100) for i in range(numProds)]
+		
+
+
 		
 		NonNegNonParam=[lambda x, j=i: x[j] for i in range(len(prefLists))]
 		lamNonParam=fmin_cobyla(NonParametricLikelihood, [1.0/len(prefLists)]*len(prefLists), [constrSumLam] + NonNegNonParam,\
@@ -44,23 +54,39 @@ for T_train in T_trainList:
 
 
 
-		twoStageArrival=[max(lamTwoStage[j],0.0000000001) for j in range(numProds+1)]
-		twoStageTransition=[max(lamTwoStage[numProds +1 +j],0.0000000001) for j in range(numProds+1)]
-			
-		#lamTwoStageConvert=convertNonParam(prefLists, twoStageArrival, twoStageTransition)
+		twoStageArrival=[] 
+		for j in range(numProds+1): 
+			if lamTwoStage[j]>0.00001:
+				twoStageArrival+=[lamTwoStage[j]]
+			else:
+				twoStageArrival+=[0]
+
+
+		twoStageTransition=[]
+		for j in range(numProds+1):
+			if lamTwoStage[numProds +1 +j]>0.00001:
+				twoStageTransition+=[lamTwoStage[numProds +1 +j]]
+			else:
+				twoStageTransition+=[0]
+		lamTwoStageConvert=convertNonParam(prefLists, twoStageArrival, twoStageTransition)
 
 
 
 
-		nonParamOptAssort=NonParamIP(prefLists,lamNonParam, numProds, revList)
-		#twoStageOptAssort=NonParamIP(prefLists,lamTwoStageConvert, numProds, revList)
-		twoStageOptAssort=FindOptU(twoStageArrival,twoStageTransition, numProds, revList,numGridPoints)
-	
+
+		for r in range(numRevTrials):
+
+			revList=[0]+list(np.random.uniform(0,100,numProds))
+			nonParamOptAssort=NonParamIP(prefLists,lamNonParam, numProds, revList)
+			twoStageOptAssort=NonParamIP(prefLists,lamTwoStageConvert, numProds, revList)
+			optAssort=NonParamIP(prefLists,[1.0/len(prefLists)]*len(prefLists), numProds, revList)
+			#twoStageOptAssort=FindOptU(twoStageArrival,twoStageTransition, numProds, revList,numGridPoints)
+		
 
 
-		nonParamRev+= NonParamRev(prefLists,revList,nonParamOptAssort)
-		twoStageRev+= NonParamRev(prefLists,revList,twoStageOptAssort)
-
+			nonParamRev+= NonParamRev(prefLists,revList,nonParamOptAssort)/numRevTrials
+			twoStageRev+= NonParamRev(prefLists,revList,twoStageOptAssort)/numRevTrials
+			optRev+=NonParamRev(prefLists,revList,optAssort)/numRevTrials
 
 
 		nonParamTest+=[NonParametricLikelihood(lamNonParam, potentialArrivalList,T_trainList[-1],T)]
@@ -70,13 +96,20 @@ for T_train in T_trainList:
 	nonParamTestList+=[np.mean(nonParamTest)]
 	twoStageTestList+=[np.mean(twoStageTest)]
 
+
 	nonParamRevList+=[nonParamRev/numTrials]
 	twoStageRevList+=[twoStageRev/numTrials]
+	optRevList+=[optRev/numTrials]
 
 
 plt.plot(T_trainList,nonParamTestList, 'r-', T_trainList, twoStageTestList, 'b-')
+plt.title('Likelihoods')
+plt.savefig('Likelihoods') 
 plt.show()
-plt.plot(T_trainList,nonParamRevList, 'r-', T_trainList, twoStageRevList, 'b-')
+
+plt.plot(T_trainList,nonParamRevList, 'r-', T_trainList, twoStageRevList, 'b-',T_trainList, optRevList, 'g-')
+plt.title('Revenues')
+plt.savefig('Revenues')
 plt.show()
 
 

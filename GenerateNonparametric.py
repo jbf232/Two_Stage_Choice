@@ -1,3 +1,5 @@
+# from LikelihoodFunctions import GetPotentialArrivalList
+
 def GenerateTypes(numProds, lengthPrefLists):
 
 	"""Generates the full set of types
@@ -35,6 +37,10 @@ def FindPurchaseNonparametric(arrivingType, offerList):
 			return prod
 
 	return 0
+
+
+
+
 
 
 
