@@ -1,5 +1,6 @@
 from gurobipy import *
 from GenerateNonparametric import *
+import numpy as np
 
 def NonParamIP(prefLists,lam, numProds, revList):
 
@@ -32,18 +33,64 @@ def NonParamIP(prefLists,lam, numProds, revList):
 	m.setParam( 'OutputFlag', False)
 	m.optimize()
 
-	
+	#print "Nonparam",m.objVal
 
 	optAssort=[]
 	prodCount=1
 	for v in m.getVars()[:numProds]:
-		#print prodCount,v.X
 
 		if v.X==1.0:
 			optAssort+=[prodCount]
 		prodCount+=1
 
 	return optAssort
+
+def SolveGriddedTwoStageIP(arrival,transition, numProds, revList,u):
+
+
+	#Create the model
+	m=Model("NonParamIP")
+
+	x={}
+	for i in range(1,numProds+1):
+		rev=revList[i]*(arrival[i] + u*transition[i])
+		x[i]=m.addVar(0.0,1,-rev,GRB.BINARY,"x_%d" %i)
+
+	m.update()
+
+	m.addConstr(LinExpr([arrival[i] for i in range(1,numProds+1)],[x[i] for i in range(1,numProds+1)]),GRB.LESS_EQUAL,1-u)
+	m.setParam( 'OutputFlag', False)
+	m.optimize()
+
+	assort=[]
+	prodCount=1
+	for v in m.getVars():
+		
+		if v.X==1.0:
+			assort+=[prodCount]
+		prodCount+=1
+
+	return -m.objVal,assort
+
+def FindOptU(arrival,transition, numProds, revList,numGridPoints):
+
+	gridSet=np.linspace(0,1,numGridPoints)
+
+	bestRev=0
+	bestAssort=[]
+	for grid in gridSet:
+
+		current,assort=SolveGriddedTwoStageIP(arrival,transition, numProds, revList,grid)
+		
+		if current > bestRev:
+			
+			bestRev = current
+			bestAssort=assort
+			
+			
+	print "Grid", bestRev
+	return bestAssort
+
 
 def convertNonParam(prefLists, twoStageArrival, twoStageTransition):
 

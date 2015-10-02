@@ -6,8 +6,9 @@ from AssortmentOpt import *
 numProds=5
 lengthPrefLists=2
 T=250
-T_trainList=[20,30,40,50,60,70,80,90,100, 110,120,130,140,150]
+T_trainList=[30,40,50,60,90,120]
 numTrials=50
+numGridPoints=200
 
 nonParamTestList=[]
 twoStageTestList=[]
@@ -23,14 +24,14 @@ for T_train in T_trainList:
 	nonParamRev=0.0
 	twoStageRev=0.0
 
-	np.random.seed(500)
+	np.random.seed(912)
 	for trial in range(numTrials):
 		prefLists=GenerateTypes(numProds, lengthPrefLists)
 		offerMatrix, purchaseMatrix = GenerateData(prefLists, numProds,T,trial)
 		potentialArrivalList=GetPotentialArrivalList(T, offerMatrix, purchaseMatrix, prefLists, numProds)
 		offerList, purchaseList = GetListSalesData(offerMatrix,purchaseMatrix,T, numProds)
 		revList=[0]+[np.random.uniform(0,100) for i in range(numProds)]
-
+		
 		NonNegNonParam=[lambda x, j=i: x[j] for i in range(len(prefLists))]
 		lamNonParam=fmin_cobyla(NonParametricLikelihood, [1.0/len(prefLists)]*len(prefLists), [constrSumLam] + NonNegNonParam,\
 		args = (potentialArrivalList,0, T_train), consargs=(), rhoend=1e-7, iprint =1 , maxfun=10000, disp= None)
@@ -43,15 +44,18 @@ for T_train in T_trainList:
 
 
 
-		twoStageArrival=lamTwoStage[:numProds+1]
-		twoStageTransition=lamTwoStage[numProds+1:]
-		lamTwoStageConvert=convertNonParam(prefLists, twoStageArrival, twoStageTransition)
+		twoStageArrival=[max(lamTwoStage[j],0.0000000001) for j in range(numProds+1)]
+		twoStageTransition=[max(lamTwoStage[numProds +1 +j],0.0000000001) for j in range(numProds+1)]
+			
+		#lamTwoStageConvert=convertNonParam(prefLists, twoStageArrival, twoStageTransition)
 
-		
+
 
 
 		nonParamOptAssort=NonParamIP(prefLists,lamNonParam, numProds, revList)
-		twoStageOptAssort=NonParamIP(prefLists,lamTwoStageConvert, numProds, revList)
+		#twoStageOptAssort=NonParamIP(prefLists,lamTwoStageConvert, numProds, revList)
+		twoStageOptAssort=FindOptU(twoStageArrival,twoStageTransition, numProds, revList,numGridPoints)
+	
 
 
 		nonParamRev+= NonParamRev(prefLists,revList,nonParamOptAssort)
